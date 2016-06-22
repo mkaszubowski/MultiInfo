@@ -52,6 +52,7 @@ module MultiInfo
           elsif !@client_cert_file[:ca_path].blank?
             clnt.ssl_config.add_trust_ca @client_cert_file[:ca_path]
           end
+          Rails.logger.debug clnt.ssl_config.inspect
           clnt.ssl_config.ssl_version='TLSv1'
           clnt.ssl_config.set_client_cert_file(@client_cert_file[:cert], @client_cert_file[:rsa_key])
           clnt.get_content(uri)
