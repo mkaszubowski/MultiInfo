@@ -6,25 +6,25 @@ module MultiInfo
   class API
     DEFAULT_CERT_FILE = 'multiinfo.crt'
     DEFAULT_KEY_FILE = 'multiinfo.pem'
-   
+
     class FakeHttpResponse
        "test mode"
     end
-   
+
     class Executor
       def initialize(authentication_hash, certificate_hash, debug=false, test_mode=false)
         @authentication_hash = authentication_hash
-        @client_cert_file = { 
+        @client_cert_file = {
           :cert => certificate_hash[:client_cert] || File.join(DEFAULT_CONFIG_PATH, DEFAULT_CERT_FILE),
           :rsa_key  => certificate_hash[:client_key] || File.join(DEFAULT_CONFIG_PATH, DEFAULT_KEY_FILE)
         }
         @client_cert_file[:ca_path] = certificate_hash[:ca_path] unless certificate_hash[:ca_path].blank?
         @debug = debug
         @test_mode = test_mode
-      
+
         allow_request_recording if @test_mode
       end
-    
+
       def execute(command_name, parameters={})
         request_uri = command(command_name, parameters)
         puts "[debug] Executing command '#{command_name}': #{request_uri}" if @debug
@@ -34,13 +34,13 @@ module MultiInfo
       def in_test_mode?
         @test_mode
       end
-    
+
       protected
-      
-      def command(command_name, parameters) 
+
+      def command(command_name, parameters)
         Command.new(command_name).with_params( parameters.merge(@authentication_hash) )
       end
-    
+
       def get_response(uri)
         if in_test_mode?
           sms_requests << uri
@@ -52,22 +52,23 @@ module MultiInfo
           elsif !@client_cert_file[:ca_path].blank?
             clnt.ssl_config.add_trust_ca @client_cert_file[:ca_path]
           end
+          clnt.ssl_config.ssl_version='TLSv1'
           clnt.ssl_config.set_client_cert_file(@client_cert_file[:cert], @client_cert_file[:rsa_key])
-          clnt.get_content(uri)    
+          clnt.get_content(uri)
         end
       end
-        
+
       private
-    
+
       def allow_request_recording
         class << self
           define_method :sms_requests do
             @sms_requests ||= []
           end
         end
-      end    
-      
-    end  
-     
+      end
+
+    end
+
   end
 end
